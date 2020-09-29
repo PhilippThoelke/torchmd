@@ -99,7 +99,7 @@ def setup(args):
         embeddings = torch.tensor(args.external["embeddings"]).repeat(args.replicas, 1)
         external = externalmodule.External(args.external["file"], embeddings, device)
 
-    system = System(mol.numAtoms, args.replicas, precision, device)
+    system = System(mol, args.replicas, precision, device)
     system.set_positions(mol.coords)
     system.set_box(mol.box)
     system.set_velocities(maxwell_boltzmann(parameters.masses, args.temperature, args.replicas))
@@ -126,7 +126,7 @@ def dynamics(args, mol, system, forces):
         minimize_bfgs(system, forces, steps=args.minimize)
 
     iterator = tqdm(range(1,int(args.steps/args.output_period)+1))
-    Epot = forces.compute(system.pos, system.box, system.forces)
+    Epot = forces.compute(system.pos, system.box, system.forces, system.ca_mask, system.not_gly_idx)
     for i in iterator:
         # viewFrame(mol, system.pos, system.forces)
         Ekin, Epot, T = integrator.step(niter=args.output_period)

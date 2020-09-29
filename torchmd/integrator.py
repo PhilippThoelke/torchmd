@@ -65,7 +65,7 @@ class Integrator:
         natoms = len(masses)
         for _ in range(niter):
             _first_VV(s.pos, s.vel, s.forces, masses, self.dt)
-            pot = self.forces.compute(s.pos, s.box, s.forces)
+            pot = self.forces.compute(s.pos, s.box, s.forces, s.ca_mask, s.not_gly_idx)
             if self.T:
                 langevin(s.vel, self.gamma, self.vcoeff, self.dt, self.device)
             _second_VV(s.vel, s.forces, masses, self.dt)

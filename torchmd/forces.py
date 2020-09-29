@@ -79,7 +79,7 @@ class Forces:
             indexedarrays.append(arr[under_cutoff])
         return indexedarrays
 
-    def compute(self, pos, box, forces, returnDetails=False, explicit_forces=True):
+    def compute(self, pos, box, forces, ca_mask, not_gly_idx, returnDetails=False, explicit_forces=True):
         if not explicit_forces and not pos.requires_grad:
             raise RuntimeError(
                 "The positions passed don't require gradients. Please use pos.detach().requires_grad_(True) before passing."
@@ -313,11 +313,14 @@ class Forces:
                         forces[i].index_add_(0, ava_idx[:, 1], forcevec)
 
         if self.external:
-            ext_ene, ext_force = self.external.calculate(pos, box)
+            ext_ene, ext_force, ext_force_cb = self.external.calculate(pos, box, ca_mask, not_gly_idx)
             for s in range(nsystems):
                 pot[s]["external"] += ext_ene[s]
             if explicit_forces:
-                forces += ext_force
+                ext_force_combined = torch.empty_like(forces, dtype=ext_force.dtype, device=ext_force.device)
+                ext_force_combined[:,ca_mask] = ext_force
+                ext_force_combined[:,~ca_mask] = ext_force_cb[:,not_gly_idx]
+                forces += ext_force_combined
 
         if not explicit_forces:
             enesum = torch.zeros(1, device=pos.device, dtype=pos.dtype)

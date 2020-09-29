@@ -3,15 +3,20 @@ import numpy as np
 
 
 class System:
-    def __init__(self, natoms, nreplicas, precision, device):
+    def __init__(self, mol, nreplicas, precision, device):
         # self.pos = pos  # Nsystems,Natoms,3
         # self.vel = vel  # Nsystems,Natoms,3
         # self.box = box
         # self.forces = forces
+        natoms = mol.numAtoms
         self.box = torch.zeros(nreplicas, 3, 3)
         self.pos = torch.zeros(nreplicas, natoms, 3)
         self.vel = torch.zeros(nreplicas, natoms, 3)
         self.forces = torch.zeros(nreplicas, natoms, 3)
+
+        self.ca_mask = torch.tensor(mol.name == 'CA', dtype=torch.bool)
+        resnames = mol.resname[np.where(mol.name == 'CA')[0]]
+        self.not_gly_idx = torch.tensor(np.where(resnames != 'GLY')[0])
 
         self.to_(device)
         self.precision_(precision)
@@ -29,6 +34,8 @@ class System:
         self.box = self.box.to(device)
         self.pos = self.pos.to(device)
         self.vel = self.vel.to(device)
+        self.ca_mask = self.ca_mask.to(device)
+        self.not_gly_idx = self.not_gly_idx.to(device)
 
     def precision_(self, precision):
         self.forces = self.forces.type(precision)
