@@ -317,9 +317,9 @@ class Forces:
             for s in range(nsystems):
                 pot[s]["external"] += ext_ene[s]
             if explicit_forces:
-                ext_force_combined = torch.empty_like(forces, dtype=ext_force.dtype, device=ext_force.device)
+                ext_force_combined = torch.zeros_like(forces, dtype=ext_force.dtype, device=ext_force.device)
                 ext_force_combined[:,ca_mask] = ext_force
-                ext_force_combined[:,~ca_mask] = ext_force_cb[:,not_gly_idx]
+                # ext_force_combined[:,~ca_mask] = ext_force_cb[:,not_gly_idx]
                 forces += ext_force_combined
 
         if not explicit_forces:
